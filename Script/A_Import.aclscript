@@ -1,0 +1,71 @@
+SET SAFETY OFF
+SET  ECHO NONE
+SET FOLDER /DataSource
+
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：
+**備註       ：
+********************************************************************
+**Step1      ：Import Item
+**Step2      ：Import variable
+**Step3      ：Import 店總表
+**Step4      ：Import Media_Type
+**Step5      ：Import Inv
+**Step6      ：Import Txn
+**Step7      ：Import Void
+**Step8      ：Import Refund
+**Step9      ：Import Point
+********************************************************************
+END
+
+
+
+
+COM **Step1      ：Import Item
+IMPORT DELIMITED TO Item "File\Item.fil" FROM "Items.csv" 3 65001 SEPARATOR "," QUALIFIER '"' CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "item_code" C AT 1 DEC 0 WID 12 PIC "" AS "" FIELD "item_cdesc" C AT 13 DEC 0 WID 152 PIC "" AS "" FIELD "cost" C AT 165 DEC 0 WID 20 PIC "" AS "" FIELD "own_label" C AT 185 DEC 0 WID 2 PIC "" AS "" FIELD "vendor_code" C AT 187 DEC 0 WID 20 PIC "" AS "" FIELD "sup_code" C AT 207 DEC 0 WID 10 PIC "" AS "" FIELD "sup_cname" C AT 217 DEC 0 WID 106 PIC "" AS "" FIELD "dept_code" C AT 323 DEC 0 WID 8 PIC "" AS "" FIELD "class_code" C AT 331 DEC 0 WID 6 PIC "" AS "" FIELD "subclass_code" C AT 337 DEC 0 WID 4 PIC "" AS "" 
+
+COM **Step2      ：Import variable
+IMPORT EXCEL TO variable "File\variable.fil" FROM "%_file_path%\variable.xlsx" TABLE "variable$" KEEPTITLE ALLCHAR  FIELD "test" C WID 1 AS ""
+
+COM **Step3      ：Import 店總表
+IMPORT EXCEL TO _4H_STORES "File\_4H_STORES.fil" FROM "%_file_path%\店總表.xls" TABLE "24H STORES$" KEEPTITLE    ALLFIELDS
+IMPORT EXCEL TO Store_Format "File\RAM_AM.fil" FROM "%_file_path%\店總表.xls" TABLE "RAM,AM$" KEEPTITLE    ALLFIELDS
+IMPORT EXCEL TO Store "File\Store.fil" FROM "%_file_path%\店總表.xls" TABLE "門市詳細資訊$" KEEPTITLE    ALLFIELDS
+
+IMPORT EXCEL TO Store_2 "File\Store_2.fil" FROM "\\Jw-561\d\ACL_Link\店代號_2.xlsx" TABLE "店代號_2$" KEEPTITLE FIELD "店號" C WID 3 AS "" FIELD "門市" C WID 6 AS "" FIELD "營業時間" C WID 1 AS "" FIELD "備註" C WID 1 AS ""
+
+
+
+COM **Step4      ：Import Media_Type
+IMPORT DELIMITED TO Media_Type "File\Media_Type.fil" FROM "%_file_path%\Media_Type.csv" 3 950 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "TND_CD" N AT 1 DEC 0 WID 4 PIC "" AS "" FIELD "TND_DESCR" C AT 5 DEC 0 WID 22 PIC "" AS "" 
+ 
+
+
+COM **Step5      ：Import Inv
+IMPORT DELIMITED TO Inv "File\Inv.fil" FROM "Inv.csv" 3 950 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "store" C AT 1 DEC 0 WID 10 PIC "" AS "" FIELD "sale_date" C AT 11 DEC 0 WID 24 PIC "" AS "" FIELD "TillID" C AT 35 DEC 0 WID 10 PIC "" AS "" FIELD "transaction_time" C AT 45 DEC 0 WID 42 PIC "" AS "" FIELD "TransactionId" C AT 87 DEC 0 WID 14 PIC "" AS "" FIELD "GlobalTxnID" C AT 101 DEC 0 WID 22 PIC "" AS "" FIELD "OperatorID" C AT 123 DEC 0 WID 12 PIC "" AS "" FIELD "tran_tendered" C AT 135 DEC 0 WID 28 PIC "" AS "" FIELD "MediaType" C AT 163 DEC 0 WID 8 PIC "" AS "" FIELD "Tendered" C AT 171 DEC 0 WID 28 PIC "" AS "" FIELD "CardNo" C AT 199 DEC 0 WID 44 PIC "" AS "" FIELD "voucher_used" C AT 243 DEC 0 WID 24 PIC "" AS "" FIELD "credit_card" C AT 267 DEC 0 WID 36 PIC "" AS "" 
+
+
+COM **Step6      ：Import Txn
+IMPORT DELIMITED TO Txn "File\Txn.fil" FROM "Txn.csv" 3 950 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "store" C AT 1 DEC 0 WID 10 PIC "" AS "" FIELD "sale_date" C AT 11 DEC 0 WID 24 PIC "" AS "" FIELD "TillID" C AT 35 DEC 0 WID 10 PIC "" AS "" FIELD "transaction_time" C AT 45 DEC 0 WID 42 PIC "" AS "" FIELD "TransactionId" C AT 87 DEC 0 WID 18 PIC "" AS "" FIELD "GlobalTxnID" C AT 105 DEC 0 WID 22 PIC "" AS "" FIELD "tran_tendered" C AT 127 DEC 0 WID 26 PIC "" AS "" FIELD "OperatorID" C AT 153 DEC 0 WID 12 PIC "" AS "" FIELD "item_code" C AT 165 DEC 0 WID 16 PIC "" AS "" FIELD "stock_cost" C AT 181 DEC 0 WID 28 PIC "" AS "" FIELD "soh_qty" C AT 209 DEC 0 WID 16 PIC "" AS "" FIELD "Quantity" C AT 225 DEC 0 WID 14 PIC "" AS "" FIELD "price" C AT 239 DEC 0 WID 24 PIC "" AS "" FIELD "discounted_price" C AT 263 DEC 0 WID 30 PIC "" AS "" FIELD "discount" C AT 293 DEC 0 WID 26 PIC "" AS "" FIELD "CardNo" C AT 319 DEC 0 WID 44 PIC "" AS "" FIELD "voucher_used" C AT 363 DEC 0 WID 24 PIC "" AS "" 
+
+COM **Step7      ：Import Void
+IMPORT DELIMITED TO Void "File\Void.fil" FROM "Void.csv" 3 950 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "store" C AT 1 DEC 0 WID 10 PIC "" AS "" FIELD "sale_date" C AT 11 DEC 0 WID 24 PIC "" AS "" FIELD "TillID" C AT 35 DEC 0 WID 10 PIC "" AS "" FIELD "transaction_time" C AT 45 DEC 0 WID 42 PIC "" AS "" FIELD "TransactionId" C AT 87 DEC 0 WID 10 PIC "" AS "" FIELD "tran_tendered" C AT 97 DEC 0 WID 28 PIC "" AS "" FIELD "OperatorID" C AT 125 DEC 0 WID 12 PIC "" AS "" FIELD "item_code" C AT 137 DEC 0 WID 16 PIC "" AS "" FIELD "stock_cost" C AT 153 DEC 0 WID 26 PIC "" AS "" FIELD "soh_qty" C AT 179 DEC 0 WID 14 PIC "" AS "" FIELD "Quantity" C AT 193 DEC 0 WID 12 PIC "" AS "" FIELD "price" C AT 205 DEC 0 WID 30 PIC "" AS "" FIELD "discounted_price" C AT 235 DEC 0 WID 30 PIC "" AS "" FIELD "void_type" C AT 265 DEC 0 WID 26 PIC "" AS "" FIELD "CardNo" C AT 291 DEC 0 WID 44 PIC "" AS "" 
+
+
+
+COM **Step8      ：Import Refund
+IMPORT DELIMITED TO Refund "File\Refund.fil" FROM "Refund.csv" 3 950 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "store" C AT 1 DEC 0 WID 10 PIC "" AS "" FIELD "sale_date" C AT 11 DEC 0 WID 24 PIC "" AS "" FIELD "TillID" C AT 35 DEC 0 WID 10 PIC "" AS "" FIELD "transaction_time" C AT 45 DEC 0 WID 42 PIC "" AS "" FIELD "TransactionId" C AT 87 DEC 0 WID 18 PIC "" AS "" FIELD "RsGlobalTxnID" C AT 105 DEC 0 WID 22 PIC "" AS "" FIELD "tran_tendered" C AT 127 DEC 0 WID 26 PIC "" AS "" FIELD "OperatorID" C AT 153 DEC 0 WID 12 PIC "" AS "" FIELD "item_code" C AT 165 DEC 0 WID 16 PIC "" AS "" FIELD "stock_cost" C AT 181 DEC 0 WID 26 PIC "" AS "" FIELD "soh_qty" C AT 207 DEC 0 WID 16 PIC "" AS "" FIELD "Quantity" C AT 223 DEC 0 WID 12 PIC "" AS "" FIELD "price" C AT 235 DEC 0 WID 22 PIC "" AS "" FIELD "discounted_price" C AT 257 DEC 0 WID 26 PIC "" AS "" FIELD "CardNo" C AT 283 DEC 0 WID 44 PIC "" AS "" FIELD "voucher_used" C AT 327 DEC 0 WID 24 PIC "" AS "" 
+
+
+COM **Step9      ：Import Point
+IMPORT DELIMITED TO Point "File\Point.fil" FROM "Point.csv" 3 65001 SEPARATOR "," QUALIFIER NONE CONSECUTIVE STARTLINE 1 KEEPTITLE FIELD "store" C AT 1 DEC 0 WID 10 PIC "" AS "" FIELD "sale_date" C AT 11 DEC 0 WID 24 PIC "" AS "" FIELD "TillID" C AT 35 DEC 0 WID 10 PIC "" AS "" FIELD "transaction_time" C AT 45 DEC 0 WID 42 PIC "" AS "" FIELD "TransactionId" C AT 87 DEC 0 WID 14 PIC "" AS "" FIELD "GlobalTxnID" C AT 101 DEC 0 WID 22 PIC "" AS "" FIELD "OperatorID" C AT 123 DEC 0 WID 12 PIC "" AS "" FIELD "tran_tendered" C AT 135 DEC 0 WID 26 PIC "" AS "" FIELD "CardNo" C AT 161 DEC 0 WID 44 PIC "" AS "" FIELD "promotion_id" C AT 205 DEC 0 WID 22 PIC "" AS "" FIELD "prom_desc" C AT 227 DEC 0 WID 78 PIC "" AS "" FIELD "points_earned" C AT 305 DEC 0 WID 26 PIC "" AS "" 
+
+
+
+
+
+

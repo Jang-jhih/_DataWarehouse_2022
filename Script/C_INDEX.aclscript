@@ -1,0 +1,164 @@
+
+SET SAFETY OFF
+SET ECHO NONE
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：
+**備註       ：
+********************************************************************
+**Step1      ：建立交易主鍵
+**Step2      ：建立員工主鍵
+**Step3      ：建立分析欄位
+**Step4      ：索引用INDEX
+********************************************************************
+END
+
+
+
+
+
+
+
+
+
+
+COM **Step1      ：建立主鍵
+assign _key_value = 'VALUE( EXCLUDE(EXCLUDE(EXCLUDE((store + TillID + TransactionId + OperatorID ) + DATE( transaction_time) + TIME( transaction_time), " "),"/"),":"), 0)'
+
+
+
+OPEN S_Inv_Main_table
+DEFINE FIELD _Primary_Key COMPUTED  %_key_value%
+
+OPEN S_Txn_Main_table
+DEFINE FIELD _Primary_Key COMPUTED  %_key_value%
+
+
+OPEN S_Refund_Main_table
+DEFINE FIELD _Primary_Key COMPUTED  %_key_value%
+
+
+OPEN S_Point_Main_table
+DEFINE FIELD _Primary_Key COMPUTED %_key_value%
+
+OPEN S_Void_Main_table
+DEFINE FIELD _Primary_Key COMPUTED  %_key_value%
+
+
+
+COM **Step2      ：建立員工主鍵
+assign _Staff_ID_value = 'VALUE( EXCLUDE(EXCLUDE(EXCLUDE((store + OperatorID ) , " "),"/"),":"), 0)'
+
+
+
+OPEN S_Inv_Main_table
+DEFINE FIELD _Staff_ID COMPUTED  %_Staff_ID_value%
+
+OPEN S_Txn_Main_table
+DEFINE FIELD _Staff_ID COMPUTED  %_Staff_ID_value%
+
+
+OPEN S_Refund_Main_table
+DEFINE FIELD _Staff_ID COMPUTED  %_Staff_ID_value%
+
+
+OPEN S_Point_Main_table
+DEFINE FIELD _Staff_ID COMPUTED %_Staff_ID_value%
+
+OPEN S_Void
+DEFINE FIELD _Staff_ID COMPUTED  %_Staff_ID_value%
+
+
+
+
+COM **Step3      ：建立分析欄位
+OPEN S_Txn_Main_table
+DEFINE FIELD item_Tendered COMPUTED 
+
+ discounted_price*dec(Quantity,4) if discounted_price >0 and Quantity > 0
+ 0
+
+OPEN S_Txn_Main_table
+DEFINE FIELD discount_rate COMPUTED 
+ discounted_price/price if discounted_price > 0 and price >0
+ 0
+
+
+
+COM **Step4      ：索引用INDEX
+
+COM -店號
+OPEN _Store_ID
+INDEX ON VALUE(店號,0) TO "INDEX\_Store_ID_on_店號" 
+COM -item_code
+
+OPEN S_Item
+INDEX ON VALUE(item_code,0) TO "INDEX\S_Item_on_item_code" 
+
+COM -GlobalTxnID
+OPEN S_Point_Main_table
+INDEX ON VALUE(GlobalTxnID,0) TO "INDEX\S_Point_on_GlobalTxnID" 
+
+com Media_Type
+OPEN Media_Type
+INDEX ON TND_CD TO "INDEX\Media_Type_on_TND_CD" 
+
+OPEN Store_Format
+INDEX ON NO_ TO "INDEX\Store_Format_on_NO_" 
+
+
+COM -_Primary_Key
+OPEN S_Txn_Main_table
+INDEX ON _Primary_Key TO "INDEX\S_Txn__Primary_Key"
+
+OPEN S_Inv_Main_table
+INDEX ON _Primary_Key TO "INDEX\S_Inv__Primary_Key" 
+
+OPEN S_Point_Main_table
+INDEX ON _Primary_Key TO "INDEX\S_Point__Primary_Key" 
+
+OPEN S_Refund_Main_table
+INDEX ON _Primary_Key TO "INDEX\S_Refund__Primary_Key" 
+
+
+COM -點數-
+OPEN S_Inv_Main_table
+DEFINE RELATION VALUE(GlobalTxnID,0) WITH S_Point_Main_table INDEX S_Point_on_GlobalTxnID
+
+OPEN S_Txn_Main_table
+DEFINE RELATION VALUE(GlobalTxnID,0) WITH S_Point_Main_table INDEX S_Point_on_GlobalTxnID
+
+
+
+
+COM -RELATION_店資訊
+OPEN S_Inv_Main_table
+DEFINE RELATION VALUE(GlobalTxnID,0) WITH S_Point_Main_table INDEX S_Point_on_GlobalTxnID
+OPEN S_Inv_Main_table
+DEFINE RELATION VALUE(MediaType,0)  WITH Media_Type INDEX Media_Type_on_TND_CD
+
+com Store_Format
+OPEN S_Txn_Main_table
+DEFINE RELATION VALUE(item_code,0)  WITH Store_Format INDEX Store_Format_on_NO_
+
+
+COM -RELATION_店資訊
+
+OPEN S_Txn_Main_table
+DEFINE RELATION VALUE(store,0) WITH _Store_ID INDEX _Store_ID_on_店號
+OPEN S_Txn_Main_table
+DEFINE RELATION VALUE(item_code,0) WITH S_Item INDEX S_Item_on_item_code
+COM 
+
+
+
+
+OPEN S_Void_Main_table
+DEFINE RELATION VALUE(store,0) WITH _Store_ID INDEX _Store_ID_on_店號
+OPEN S_Void_Main_table
+DEFINE RELATION VALUE(item_code,0) WITH S_Item INDEX S_Item_on_item_code
+OPEN S_Void_Main_table
+DEFINE RELATION VALUE(item_code,0)  WITH Store_Format INDEX Store_Format_on_NO_

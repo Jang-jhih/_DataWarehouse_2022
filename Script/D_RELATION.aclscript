@@ -1,0 +1,94 @@
+SET SAFETY OFF
+SET ECHO NONE
+SET FOLDER /TMP_DATA
+
+
+*
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：
+**備註       ：
+********************************************************************
+**Step1      ：
+**Step2      ：
+**Step3      ：
+**Step4      ：
+********************************************************************
+END
+
+
+
+
+
+
+COM------------------_Primary_Key
+
+OPEN S_Inv
+DEFINE FIELD _Primary_Key COMPUTED VALUE( EXCLUDE(EXCLUDE( store+DATE( transaction_time , "yyyy/mm/dd")+TransactionId+OperatorID+STRING(tran_tendered ,0)+TillID , "/" )," "), 0)
+OPEN S_Void
+DEFINE FIELD _Primary_Key COMPUTED VALUE( EXCLUDE(EXCLUDE( store+DATE( transaction_time , "yyyy/mm/dd")+TransactionId+OperatorID+STRING(tran_tendered ,0)+TillID , "/" )," "), 0)
+
+
+OPEN S_Txn_Main_table
+EXTRACT FIELD ALL IF TillID <> "241" AND (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\Txn_None241.fil" OPEN
+
+
+com-----------------Point
+OPEN S_Point 
+EXTRACT FIELD ALL IF promotion_id="10" AND (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\Point_BasePoint" OPEN
+
+OPEN S_Point
+EXTRACT FIELD ALL IF promotion_id<>"10" AND (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\Point_NotPoint" OPEN
+
+Com------------------SUBTOTAL_Point
+OPEN S_Point
+SUMMARIZE ON GlobalTxnID SUBTOTAL points_earned as "Point_SUBTOTAL" IF (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\Point_sum.FIL" OPEN PRESORT 
+
+
+
+COM------------------RELATION_明細
+APPEND Txn_None241 S_Refund TO "./DW_files\S_Txn_Refund"
+
+
+OPEN Point_sum
+INDEX ON value(GlobalTxnID,0) TO "./DW_files\Point_BasePoint_on_GlobalTxnID"
+OPEN S_Txn_Refund
+DEFINE RELATION value(GlobalTxnID,0) WITH Point_sum INDEX Point_BasePoint_on_GlobalTxnID
+
+
+
+
+COM------------------RELATION_Item
+
+OPEN S_Txn_Refund
+DEFINE RELATION value(item_code,0) WITH S_Item INDEX S_Item_on_item_code
+
+OPEN S_Txn_Refund
+DEFINE RELATION value(store,0) WITH _Store_ID INDEX _Store_ID_on_店號
+
+COM------------------總表
+SET FOLDER /Final_DATA
+
+SET FOLDER /總表
+OPEN S_Inv
+EXTRACT FIELDS ALL _Store_ID.縣市 _Store_ID.門市 _Store_ID.門市地址 _Store_ID.營業時間 _Store_ID.店號 S_Void.discounted_price S_Void.item_code S_Void.price S_Void.Quantity S_Void.tran_tendered S_Void.void_type  IF (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\S_Inv_Void" OPEN
+
+
+
+
+OPEN S_Txn_Refund
+EXTRACT FIELDS ALL Point_sum.Point_SUBTOTAL S_Item.class_code S_Item.cost S_Item.dept_code S_Item.item_cdesc S_Item.item_code S_Item.own_label S_Item.subclass_code S_Item.sup_cname S_Item.sup_code S_Item.vendor_code _Store_ID.門市 _Store_ID.縣市 _Store_ID.門市地址 _Store_ID.營業時間 IF (transaction_time >= _S_AUDIT_DAY) AND (transaction_time <= _E_AUDIT_DAY) TO "./DW_files\S_Txn_Refund_Pomotion.FIL" OPEN
+
+
+
+
+
+
+
+
+
+
+

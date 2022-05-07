@@ -1,0 +1,266 @@
+
+
+SET SAFETY OFF
+SET ECHO NONE
+
+
+
+
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：正規化
+**備註       ：
+********************************************************************
+**Step1      ：正規化 Inv
+**Step2      ：正規化 Txn
+**Step3      ：正規化 Point
+**Step4      ：正規化 Refund
+**Step5      ：正規化 Void
+**Step6      ：正規化 item
+**Step7      ：正規化 Store
+********************************************************************
+END
+
+
+COM **Step1      ：正規化 Inv
+SET FOLDER /Completeness
+OPEN Inv
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) AS "store" ALLTRIM( EXCLUDE( EXCLUDE( credit_card,'"' ),' ' ) ) AS "credit_card" ALLTRIM( EXCLUDE( EXCLUDE( CardNo,'"' ),' ' ) ) AS "CardNo" ALLTRIM( EXCLUDE( EXCLUDE( GlobalTxnID,'"' ),' ' ) ) AS "GlobalTxnID" ALLTRIM(EXCLUDE(EXCLUDE( MediaType,'"' ),' ' )) AS "MediaType" ALLTRIM(EXCLUDE(EXCLUDE( sale_date,'"' ),' ' )) AS "sale_date" ALLTRIM(EXCLUDE(EXCLUDE( OperatorID,'"' ),' ' )) AS "OperatorID" ALLTRIM(EXCLUDE(EXCLUDE( tran_tendered,'"' ),' ' )) AS "tran_tendered" EXCLUDE( EXCLUDE( Tendered,'"' ),' ' ) AS "Tendered" ALLTRIM(EXCLUDE(EXCLUDE( TillID,'"' ),' ' )) AS "TillID" ALLTRIM( EXCLUDE( EXCLUDE( TransactionId,'"' ),' ' ) ) AS "TransactionId" ALLTRIM( EXCLUDE( EXCLUDE( voucher_used,'"' ),' ' ) ) AS "voucher_used"  ALLTRIM(EXCLUDE( transaction_time,'"' )) AS "transaction_time" IF ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) <> "store" TO "File\S_Inv" OPEN
+
+
+
+OPEN S_Inv
+DEFINE FIELD store          UNICODE     1  10    
+DEFINE FIELD credit_card    UNICODE    11  36    
+DEFINE FIELD CardNo         UNICODE    47  44    
+DEFINE FIELD GlobalTxnID    UNICODE    91  22    
+DEFINE FIELD MediaType      UNICODE   113   8    
+DEFINE FIELD sale_date      DATETIME  121 24 PICTURE "YYYY/MM/DD"   
+DEFINE FIELD OperatorID     UNICODE   145  12    
+DEFINE FIELD tran_tendered NUMERIC 157 28 4 WIDTH 14 
+DEFINE FIELD Tendered       NUMERIC   185  28 4 WIDTH 14  
+DEFINE FIELD TillID         UNICODE   213  10    
+DEFINE FIELD TransactionId  UNICODE   223  14    
+DEFINE FIELD voucher_used NUMERIC 237 24 4 WIDTH 12 
+DEFINE FIELD transaction_time DATETIME  261  42   PICTURE "YYYY/MM/DDhh:mm:ss" WIDTH 21  
+DEFINE FIELD 星期           COMPUTED  CDOW(sale_date , 3)
+DO SCRIPT "%_WEEK%"
+
+do script Script\Z_Card_namber.aclscript
+
+
+
+
+
+
+COM **Step2      ：正規化 Txn
+SET FOLDER /Completeness
+OPEN "Txn"
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( CardNo,'"' ),' ' ) ) AS "CardNo" ALLTRIM(EXCLUDE(EXCLUDE( discount,'"' ),' ' )) as "discount" ALLTRIM(EXCLUDE(EXCLUDE( discounted_price,'"' ),' ' )) as "discounted_price" ALLTRIM( EXCLUDE( EXCLUDE( GlobalTxnID,'"' ),' ' ) ) AS "GlobalTxnID" ALLTRIM(EXCLUDE(EXCLUDE( item_code,'"' ),' ' )) as "item_code" ALLTRIM(EXCLUDE(EXCLUDE( OperatorID,'"' ),' ' )) AS "OperatorID" ALLTRIM(EXCLUDE(EXCLUDE( price,'"' ),' ' )) as "price" ALLTRIM( EXCLUDE( EXCLUDE( Quantity,'"' ),' ' ) ) as "Quantity" ALLTRIM(EXCLUDE(EXCLUDE( sale_date,'"' ),' ' )) AS "sale_date" ALLTRIM( EXCLUDE( EXCLUDE( soh_qty,'"' ),' ' ) ) AS "soh_qty" EXCLUDE(EXCLUDE( stock_cost,'"' ),' ' ) AS "stock_cost" ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) AS "store" ALLTRIM(EXCLUDE(EXCLUDE( TillID,'"' ),' ' )) AS "TillID" ALLTRIM(EXCLUDE(EXCLUDE( tran_tendered,'"' ),' ' )) AS "tran_tendered"  ALLTRIM(EXCLUDE( transaction_time,'"' )) AS "transaction_time" ALLTRIM( EXCLUDE( EXCLUDE( TransactionId,'"' ),' ' ) ) AS "TransactionId" ALLTRIM( EXCLUDE( EXCLUDE( voucher_used,'"' ),' ' ) ) AS "voucher_used" IF ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) <> "store" TO "File\S_Txn.FIL" OPEN
+
+ 
+OPEN S_Txn
+
+DEFINE FIELD CardNo UNICODE 1 44 
+DEFINE FIELD discount NUMERIC 45 26 4 WIDTH 13 
+DEFINE FIELD discounted_price NUMERIC 71 30 6 WIDTH 15 
+DEFINE FIELD GlobalTxnID UNICODE 101 22 
+DEFINE FIELD item_code UNICODE 123 16 
+DEFINE FIELD OperatorID UNICODE 139 12 
+DEFINE FIELD price NUMERIC 151 24 4 WIDTH 12 
+DEFINE FIELD Quantity NUMERIC 175 14 0 WIDTH 7 
+DEFINE FIELD sale_date DATETIME 189 24 PICTURE "YYYY/MM/DD" 
+DEFINE FIELD soh_qty NUMERIC 213 16 0 WIDTH 8 
+DEFINE FIELD stock_cost NUMERIC 229 28 4 WIDTH 14 
+DEFINE FIELD store UNICODE 257 10 
+DEFINE FIELD TillID UNICODE 267 10 
+DEFINE FIELD tran_tendered NUMERIC 277 26 4 WIDTH 13 
+DEFINE FIELD transaction_time DATETIME 303 42 PICTURE "YYYY/MM/DD HH:MM:SS" WIDTH 21 
+DEFINE FIELD TransactionId UNICODE 345 18 
+DEFINE FIELD voucher_used NUMERIC 363 24 4 WIDTH 12 
+DEFINE FIELD 星期           COMPUTED  CDOW(sale_date , 3)
+DO SCRIPT "%_WEEK%"
+
+do script Script\Z_Card_namber.aclscript
+
+DEFINE FIELD _Transaction_type COMPUTED
+
+"Refund"     IF tillid="241"
+"SalesItem"
+
+
+
+
+
+
+
+COM **Step3      ：正規化 Point
+SET FOLDER /Completeness
+OPEN Point
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( CardNo,'"' ),' ' ) ) AS "CardNo" ALLTRIM( EXCLUDE( EXCLUDE( GlobalTxnID,'"' ),' ' ) ) AS "GlobalTxnID" ALLTRIM(EXCLUDE(EXCLUDE( OperatorID,'"' ),' ' )) AS "OperatorID" ALLTRIM(EXCLUDE(EXCLUDE( points_earned ,'"' ),' ' )) AS "points_earned" ALLTRIM(EXCLUDE(EXCLUDE( prom_desc,'"' ),' ' )) AS "prom_desc" ALLTRIM(EXCLUDE(EXCLUDE( promotion_id,'"' ),' ' )) AS "promotion_id" ALLTRIM(EXCLUDE(EXCLUDE( sale_date,'"' ),' ' )) AS "sale_date" ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) AS "store" ALLTRIM(EXCLUDE(EXCLUDE( TillID,'"' ),' ' )) AS "TillID" ALLTRIM(EXCLUDE(EXCLUDE( tran_tendered,'"' ),' ' )) AS "tran_tendered"  ALLTRIM(EXCLUDE( transaction_time,'"' )) AS "transaction_time" ALLTRIM( EXCLUDE( EXCLUDE( TransactionId,'"' ),' ' ) ) AS "TransactionId" IF ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) <> "store" TO "File\S_Point" OPEN
+
+OPEN S_Point
+
+DEFINE FIELD CardNo UNICODE 1 44 
+DEFINE FIELD GlobalTxnID UNICODE 45 22 
+DEFINE FIELD OperatorID UNICODE 67 12 
+DEFINE FIELD points_earned NUMERIC 79 26 4 WIDTH 13 
+DEFINE FIELD prom_desc UNICODE 105 78 
+DEFINE FIELD promotion_id UNICODE 183 22 
+DEFINE FIELD sale_date DATETIME 205 24 PICTURE "YYYY/MM/DD" 
+DEFINE FIELD store UNICODE 229 10 
+DEFINE FIELD TillID UNICODE 239 10 
+DEFINE FIELD tran_tendered NUMERIC 249 26 4 WIDTH 13 
+DEFINE FIELD transaction_time DATETIME 275 42 PICTURE "YYYY/MM/DD HH:MM:SS" WIDTH 21 
+DEFINE FIELD TransactionId UNICODE 317 14 
+DEFINE FIELD 星期           COMPUTED  CDOW(sale_date , 3)
+DO SCRIPT "%_WEEK%"
+
+do script Script\Z_Card_namber.aclscript
+
+
+
+
+
+
+
+
+
+
+
+COM **Step4      ：正規化 Refund
+SET FOLDER /Completeness
+OPEN Refund
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( CardNo,'"' ),' ' ) ) AS "CardNo" ALLTRIM(EXCLUDE(EXCLUDE( discounted_price,'"' ),' ' )) as "discounted_price" ALLTRIM(EXCLUDE(EXCLUDE( item_code,'"' ),' ' )) as "item_code" ALLTRIM(EXCLUDE(EXCLUDE( OperatorID,'"' ),' ' )) AS "OperatorID" ALLTRIM(EXCLUDE(EXCLUDE( price,'"' ),' ' )) as "price" ALLTRIM( EXCLUDE( EXCLUDE( Quantity,'"' ),' ' ) ) as "Quantity" ALLTRIM(EXCLUDE(EXCLUDE( sale_date,'"' ),' ' )) AS "sale_date" ALLTRIM( EXCLUDE( EXCLUDE( soh_qty,'"' ),' ' ) ) AS "soh_qty" EXCLUDE(EXCLUDE( stock_cost,'"' ),' ' ) AS "stock_cost" ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) AS "store" ALLTRIM(EXCLUDE(EXCLUDE( TillID,'"' ),' ' )) AS "TillID" ALLTRIM(EXCLUDE(EXCLUDE( tran_tendered,'"' ),' ' )) AS "tran_tendered"  ALLTRIM(EXCLUDE( transaction_time,'"' )) AS "transaction_time" ALLTRIM( EXCLUDE( EXCLUDE( TransactionId,'"' ),' ' ) ) AS "TransactionId" ALLTRIM( EXCLUDE( EXCLUDE( voucher_used,'"' ),' ' ) ) AS "voucher_used" ALLTRIM( EXCLUDE( EXCLUDE( RsGlobalTxnID,'"' ),' ' ) ) AS "GlobalTxnID" IF ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) <> "store" TO "File\S_Refund.fil" OPEN
+
+OPEN S_Refund
+DEFINE FIELD CardNo UNICODE 1 44 
+DEFINE FIELD discounted_price NUMERIC 45 26 6 WIDTH 13 
+DEFINE FIELD item_code UNICODE 71 16 
+DEFINE FIELD OperatorID UNICODE 87 12 
+DEFINE FIELD price NUMERIC 99 22 4 WIDTH 11 
+DEFINE FIELD Quantity NUMERIC 121 12 0 WIDTH 6 
+DEFINE FIELD sale_date DATETIME 133 24 PICTURE "YYYY/MM/DD" 
+DEFINE FIELD soh_qty NUMERIC 157 16 0 WIDTH 8 
+DEFINE FIELD stock_cost NUMERIC 173 26 4 WIDTH 13 
+DEFINE FIELD store UNICODE 199 10 
+DEFINE FIELD TillID UNICODE 209 10 
+DEFINE FIELD tran_tendered NUMERIC 219 26 4 WIDTH 13 
+DEFINE FIELD transaction_time DATETIME 245 42 PICTURE "YYYY/MM/DD HH:MM:SS" WIDTH 21 
+DEFINE FIELD TransactionId UNICODE 287 18 
+DEFINE FIELD voucher_used NUMERIC 305 24 4 WIDTH 12 
+DEFINE FIELD GlobalTxnID UNICODE 329 22 
+DEFINE FIELD 星期           COMPUTED  CDOW(sale_date , 3)
+DO SCRIPT "%_WEEK%"
+
+do script Script\Z_Card_namber.aclscript
+
+
+
+
+
+
+
+COM **Step5      ：正規化 Void
+SET FOLDER /Completeness
+OPEN Void
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( CardNo,'"' ),' ' ) ) AS "CardNo" ALLTRIM(EXCLUDE(EXCLUDE( discounted_price,'"' ),' ' )) as "discounted_price" ALLTRIM(EXCLUDE(EXCLUDE( item_code,'"' ),' ' )) as "item_code" ALLTRIM(EXCLUDE(EXCLUDE( OperatorID,'"' ),' ' )) AS "OperatorID" ALLTRIM(EXCLUDE(EXCLUDE( price,'"' ),' ' )) as "price" ALLTRIM( EXCLUDE( EXCLUDE( Quantity,'"' ),' ' ) ) as "Quantity" ALLTRIM(EXCLUDE(EXCLUDE( sale_date,'"' ),' ' )) AS "sale_date" ALLTRIM( EXCLUDE( EXCLUDE( soh_qty,'"' ),' ' ) ) AS "soh_qty" EXCLUDE(EXCLUDE( stock_cost,'"' ),' ' ) AS "stock_cost" ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) AS "store" ALLTRIM(EXCLUDE(EXCLUDE( TillID,'"' ),' ' )) AS "TillID" ALLTRIM(EXCLUDE(EXCLUDE( tran_tendered,'"' ),' ' )) AS "tran_tendered"  ALLTRIM(EXCLUDE( transaction_time,'"' )) AS "transaction_time" ALLTRIM( EXCLUDE( EXCLUDE( TransactionId,'"' ),' ' ) ) AS "TransactionId" ALLTRIM( EXCLUDE( EXCLUDE( void_type,'"' ),' ' ) ) AS "void_type" IF ALLTRIM( EXCLUDE( EXCLUDE( store,'"' ),' ' ) ) <> "store" TO "File\S_Void.fil" OPEN
+
+OPEN S_Void
+
+DEFINE FIELD CardNo             UNICODE    1 44 
+DEFINE FIELD discounted_price   NUMERIC   45 30 4 WIDTH 15 
+DEFINE FIELD item_code          UNICODE   75 16 
+DEFINE FIELD OperatorID         UNICODE   91 12 
+DEFINE FIELD price              NUMERIC  103 30 4 WIDTH 15 
+DEFINE FIELD Quantity           NUMERIC  133 12 0 WIDTH 6 
+DEFINE FIELD sale_date          DATETIME 145 24 PICTURE "YYYY/MM/DD" 
+DEFINE FIELD soh_qty            NUMERIC  169 14 0 WIDTH 7 
+DEFINE FIELD stock_cost         NUMERIC  183 26 4 WIDTH 13 
+DEFINE FIELD store              UNICODE  209 10 
+DEFINE FIELD TillID             UNICODE  219 10 
+DEFINE FIELD tran_tendered      NUMERIC  229 28 4 WIDTH 14 
+DEFINE FIELD transaction_time   DATETIME 257 42 PICTURE "YYYY/MM/DD HH:MM:SS" WIDTH 21 
+DEFINE FIELD TransactionId      UNICODE  299 10 
+DEFINE FIELD void_type          UNICODE  309 26 
+DEFINE FIELD 星期           COMPUTED  CDOW(sale_date , 3)
+DO SCRIPT "%_WEEK%"
+
+DEFINE FIELD _Transaction_type COMPUTED 
+
+ "Void_Transaction" IF void_type = "Transaction"
+ "Void_Item" IF void_type = 'Item'
+ "Void_Transaction" IF void_type = "Transaction"
+ ""
+
+
+
+do script Script\Z_Card_namber.aclscript
+
+
+
+
+
+COM **Step6      ：正規化 item
+SET FOLDER /Completeness
+OPEN item
+EXTRACT FIELDS EXCLUDE(EXCLUDE( class_code,'"' ),' ' ) AS "class_code" EXCLUDE(EXCLUDE( cost,'"' ),' ' ) AS "cost" EXCLUDE(EXCLUDE( dept_code,'"' ),' ' ) AS "dept_code" EXCLUDE(EXCLUDE( item_cdesc,'"' ),' ' ) AS "item_cdesc" ALLTRIM(EXCLUDE(EXCLUDE( item_code,'"' ),' ' )) AS "item_code" EXCLUDE(EXCLUDE( own_label,'"' ),' ' ) AS "own_label" EXCLUDE(EXCLUDE( subclass_code,'"' ),' ' ) AS "subclass_code" EXCLUDE(EXCLUDE( sup_cname,'"' ),' ' ) AS "sup_cname" EXCLUDE(EXCLUDE( sup_code,'"' ),' ' ) AS "sup_code" EXCLUDE(EXCLUDE( vendor_code,'"' ),' ' ) AS "vendor_code" TO "File\S_Item.fil" OPEN
+
+
+OPEN S_Item
+DEFINE FIELD class_code UNICODE 1 6 
+DEFINE FIELD cost NUMERIC 7 20 4 WIDTH 10 
+DEFINE FIELD dept_code UNICODE 27 8 
+DEFINE FIELD item_cdesc UNICODE 35 152 
+DEFINE FIELD item_code UNICODE 187 12 
+DEFINE FIELD own_label UNICODE 199 2 
+DEFINE FIELD subclass_code UNICODE 201 4 
+DEFINE FIELD sup_cname UNICODE 205 106 
+DEFINE FIELD sup_code UNICODE 311 10 
+DEFINE FIELD vendor_code UNICODE 321 20 
+
+
+COM **Step7      ：正規化 Store
+OPEN Store
+EXTRACT FIELDS ALLTRIM( EXCLUDE( EXCLUDE( 備註,'"' ),' ' ) ) AS "備註" ALLTRIM( EXCLUDE( EXCLUDE( 區域,'"' ),' ' ) ) AS "區域" ALLTRIM( EXCLUDE( EXCLUDE( 店號,'"' ),' ' ) ) AS "店號" ALLTRIM( EXCLUDE( EXCLUDE( 營業時間,'"' ),' ' ) ) AS "營業時間" ALLTRIM( EXCLUDE( EXCLUDE( 營業時間變更日期,'"' ),' ' ) ) AS "營業時間變更日期" ALLTRIM( EXCLUDE( EXCLUDE( 縣市,'"' ),' ' ) ) AS "縣市" ALLTRIM(EXCLUDE(EXCLUDE( 門市,'"' ),' ' )) AS "門市" ALLTRIM( EXCLUDE(EXCLUDE( 門市地址,'"' ),' ' )) AS "門市地址" ALLTRIM( EXCLUDE(EXCLUDE( 門市電話1,'"' ),' ' )) AS "門市電話1" ALLTRIM( EXCLUDE(EXCLUDE( 門市電話2,'"' ),' ' )) AS "門市電話2" TO "File\S_Store.fil" OPEN
+
+
+APPEND  S_Store Store_2 TO "_Store_ID" COMMONFIELDS
+
+open _Store_ID
+DO CloseTime
+
+
+
+
+
+
+
+
+
+
+
+SET FOLDER /%V_TMP_FOLDER%
+com  調整查核區間
+_table_name = "S_Refund"
+Do SCRIPT  "%INI_path%\Audit_week_range\Extract_Data_range.aclscript"
+
+
+com  調整查核區間
+_table_name = "S_Inv"
+Do SCRIPT  "%INI_path%\Audit_week_range\Extract_Data_range.aclscript"
+
+com  調整查核區間
+_table_name = "S_Txn"
+Do SCRIPT  "%INI_path%\Audit_week_range\Extract_Data_range.aclscript"
+
+com  調整查核區間
+_table_name = "S_Point"
+Do SCRIPT  "%INI_path%\Audit_week_range\Extract_Data_range.aclscript"
+
+com  調整查核區間
+_table_name = "S_Void"
+Do SCRIPT  "%INI_path%\Audit_week_range\Extract_Data_range.aclscript"

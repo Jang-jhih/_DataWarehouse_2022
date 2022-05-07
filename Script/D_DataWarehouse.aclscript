@@ -1,0 +1,293 @@
+SET SAFETY OFF
+SET ECHO NONE
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：
+**備註       ：
+********************************************************************
+**Step1      ：共用關聯欄位
+**Step2      ：建立關聯
+**Step3      ：
+**Step4      ：
+********************************************************************
+END
+
+
+
+COM **Step1      ：共用關聯欄位
+assign _S_Point_Main_table = "S_Point_Main_table.points_earned S_Point_Main_table.prom_desc S_Point_Main_table.promotion_id"
+ASSIGN _S_Txn_Column = "_Store_ID.門市 S_Item.item_cdesc"
+ASSIGN _S_INV_Column = "_Store_ID.門市 Media_Type.TND_DESCR"
+
+
+
+COM **Step2      ：建立關聯
+COMMENT
+*************************************************************************************************
+******************************         S_promotion  RELATION      ******************************
+*************************************************************************************************
+END
+
+
+
+OPEN Store
+INDEX ON value(店號,0) TO "Store_on_店號" ISOLOCALE root
+OPEN S_Point_Main_table
+DEFINE RELATION value(store,0) WITH Store INDEX Store_on_店號
+
+
+
+COMMENT
+***************************************************************************************************
+******************************          _S_Inv  RELATION         *********************************
+***************************************************************************************************
+END
+
+OPEN Media_Type
+INDEX ON TND_CD TO "File\Media_Type"
+OPEN S_Inv_Main_table
+DEFINE RELATION VALUE(MediaType,0) WITH Media_Type INDEX Media_Type
+
+OPEN _Store_ID
+INDEX ON value(店號,0) TO "File\_Store_ID_on_店號"
+OPEN S_Inv_Main_table
+DEFINE RELATION value(store,0) WITH _Store_ID INDEX _Store_ID_on_店號
+
+OPEN S_Void_Main_table
+INDEX ON _Primary_Key TO "File\Void_on_PK"
+OPEN S_Inv_Main_table
+DEFINE RELATION _Primary_Key WITH S_Void_Main_table INDEX Void_on_PK
+
+
+
+
+COMMENT
+**************************************************************************************************
+******************************             麻黃素               **********************************
+**************************************************************************************************
+END
+assign _Exclude_Column = 'exclude  discount    soh_qty stock_cost    voucher_used  item_Tendered discount_rate'
+
+SET FOLDER /DataWarehouse/Ephedrine
+OPEN S_Txn_Main_table 
+SORT ON VALUE(CardNo,0) as "CardNo" VALUE(GlobalTxnID,0) as "GlobalTxnID" sale_date FIELDS all _Store_ID.門市 S_Item.item_cdesc IF ISBLANK(CardNo) = f and BETWEEN( sale_date, _Ephedrine_S_AUDIT_DAY, _Ephedrine_E_AUDIT_DAY) AND (item_code = '103256' or item_code = '917332' or item_code = '903357' or item_code = '114027' or item_code = '114030' or item_code = '956243' or item_code = '187203' or item_code = '187205' or item_code = '221835') TO "%_file_path%\S_Txn_Sort_9.FIL" OPEN 
+
+com ******************************       Layout              **********************************************
+OPEN S_Txn_Sort_9
+save layout FILE TO "%_layout%\S_Txn_Sort.layout"
+com ******************************       Layout              **********************************************
+
+
+
+COMMENT
+****************************************************************************************************
+******************************               Void_Refund              ******************************
+****************************************************************************************************
+END
+assign _Exclude_Column = 'exclude  discount    soh_qty stock_cost    voucher_used  item_Tendered discount_rate'
+
+
+SET FOLDER /DataWarehouse/Void_Refund
+
+assign _Void_Refund_Filter = 'BETWEEN( sale_date, _VR_s_AUDIT_DAY, _VR_E_AUDIT_DAY) AND 900 > VALUE(store,0) and OperatorID <> "9991"' 
+
+
+
+OPEN S_Txn_Main_table 
+EXTRACT FIELDS all   %_S_Txn_Column% IF %_Void_Refund_Filter%  TO "%_file_path%\VR_Txn" OPEN
+
+OPEN S_Void_Main_table
+EXTRACT FIELDS all   %_S_Txn_Column% IF  %_Void_Refund_Filter%  TO "%_file_path%\VR_Void" OPEN
+
+OPEN S_Inv_Main_table
+EXTRACT FIELDS all   %_S_INV_Column% IF  %_Void_Refund_Filter% TO "%_file_path%\VR_Inv " OPEN
+
+OPEN S_Inv_Main_table
+SUMMARIZE ON _Primary_Key other MediaType IF value(MediaType,0) = 1 TO "%_file_path%\VR_Inv_MediaType.FIL" OPEN PRESORT
+
+
+com ******************************       Layout              **********************************************
+
+OPEN VR_Txn 
+save layout FILE TO "%_layout%\VR_Txn.layout"
+OPEN VR_Void 
+save layout FILE TO "%_layout%\VR_Void.layout"
+OPEN VR_Inv 
+save layout FILE TO "%_layout%\VR_Inv.layout"
+OPEN VR_Inv_MediaType 
+save layout FILE TO "%_layout%\VR_Inv_MediaType.layout"
+
+com ******************************       Layout              **********************************************
+
+
+
+
+
+
+
+COMMENT
+******************************************************************************************************
+******************************           Point_Cashier              **********************************
+******************************************************************************************************
+END
+assign _Exclude_Column = 'exclude  discount    soh_qty stock_cost    voucher_used  item_Tendered discount_rate'
+
+
+
+
+SET FOLDER /DataWarehouse/Point_Cashier
+OPEN S_Txn_Main_table 
+EXTRACT FIELDS all %_S_Txn_Column%   IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) and  VALUE(store,0) < 900 and isblank(S_Item.item_cdesc) =f and isblank(CardNo) = f and OperatorID <> "9991" TO "%_file_path%\Point_Cashier_Txn" OPEN
+
+
+OPEN S_Inv_Main_table
+EXTRACT FIELDS all %_S_INV_Column% IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) and  VALUE(store,0) < 900  and isblank(CardNo) = f  and isblank(credit_card) = f and OperatorID <> "9991" TO "%_file_path%\Point_Cashier_Inv" OPEN
+
+
+
+
+com ******************************       Layout              **********************************************
+OPEN Point_Cashier_Txn
+save layout FILE TO "%_layout%\Point_Cashier_Txn.layout"
+
+OPEN Point_Cashier_Inv
+save layout FILE TO "%_layout%\Point_Cashier_Inv.layout"
+com ******************************       Layout              **********************************************
+
+
+
+COMMENT
+********************************************************************************************************
+******************************       Analyze              ***************************************
+********************************************************************************************************
+END
+
+
+SET FOLDER /DataWarehouse/Analyze
+
+OPEN S_Inv_Main_table 
+EXTRACT FIELDS all %_S_INV_Column%   TO "%_file_path%\Analyze_S_Inv_Main_table" OPEN
+
+OPEN S_Void_Main_table 
+EXTRACT FIELDS all   TO "%_file_path%\Analyze_S_Void_Main_table" OPEN
+
+OPEN S_Refund_Main_table 
+EXTRACT FIELDS all   TO "%_file_path%\Analyze_S_Refund_Main_table" OPEN
+
+
+COM ******************************       Layout              **********************************************
+
+OPEN Analyze_S_Inv_Main_table
+save layout FILE TO "%_layout%\Analyze_S_Inv_Main_table.layout"
+
+
+OPEN Analyze_S_Void_Main_table
+save layout FILE TO "%_layout%\Analyze_S_Void_Main_table.layout"
+
+
+OPEN Analyze_S_Refund_Main_table
+save layout FILE TO "%_layout%\Analyze_S_Refund_Main_table.layout"
+
+******************************       Layout              **********************************************
+
+
+COMMENT
+********************************************************************************************************
+******************************       Voucher              ***************************************
+********************************************************************************************************
+END
+
+COM assign _Exclude_Column = 'exclude  discount    soh_qty stock_cost    voucher_used  item_Tendered discount_rate'
+
+
+
+COM SET FOLDER /DataWarehouse/Voucher
+
+
+
+COM OPEN S_Item 
+COM EXTRACT FIELDS all  TO "%_file_path%\Voucher_Item" OPEN
+
+
+COM OPEN S_Txn_Main_table 
+COM EXTRACT FIELDS all %_S_Txn_Column% IF BETWEEN( sale_date, _Voucher_S_AUDIT_DAY, _Voucher_E_AUDIT_DAY) TO "%_file_path%\Voucher_Txn" OPEN
+
+
+
+
+COM ******************************       Layout              **********************************************
+COM OPEN Voucher_Item
+COM save layout FILE TO "%_layout%\Voucher_Item.layout"
+
+COM OPEN Voucher_Txn
+COM save layout FILE TO "%_layout%\Voucher_Txn.layout"
+
+COM ******************************       Layout              **********************************************
+
+COM SAVE TABLELIST FILE TO "%_layout%\TABLELIST"
+
+
+
+COMMENT
+*****************************************************************************************************
+******************************       Power_BI分析              **************************************
+*****************************************************************************************************
+END
+
+
+
+COM open S_Txn_Main_table
+COM EXPORT FIELDS ALL %_S_Txn_Column%  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) DELIMITED TO "%_Power_BI_path%\S_Txn.csv" KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+COM open S_Inv
+COM EXPORT FIELDS ALL %_S_INV_Column%  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) DELIMITED TO "%_Power_BI_path%\S_Inv.csv" KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+COM OPEN S_Item 
+COM EXPORT FIELDS ALL DELIMITED TO "%_Power_BI_path%\S_Item.csv"  KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+
+COM OPEN S_Point 
+COM EXPORT FIELDS ALL Store.門市  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) DELIMITED TO "%_Power_BI_path%\S_Point.csv"  KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+COM OPEN S_Refund 
+COM EXPORT FIELDS ALL DELIMITED  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) TO "%_Power_BI_path%\S_Refund.csv"  KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+COM OPEN S_Void 
+COM EXPORT FIELDS ALL DELIMITED  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) TO "%_Power_BI_path%\S_Void.csv"  KEEPTITLE SEPARATOR "," QUALIFIER '"'
+
+
+
+COMMENT
+******************************************************************************************************
+******************************           Main_Table              **********************************
+******************************************************************************************************
+END
+
+
+SET FOLDER /DataWarehouse/Main_Table
+OPEN S_Txn_Main_table 
+EXTRACT FIELDS ALL %_S_Txn_Column%  IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY) TO "%_file_path%\Main_Table_Txn.FIL" OPEN 
+
+
+
+
+
+OPEN S_Inv_Main_table 
+EXTRACT FIELDS all %_S_INV_Column% IF BETWEEN( sale_date, _S_AUDIT_DAY, _E_AUDIT_DAY)TO "%_file_path%\Main_Tabler_Inv" OPEN
+
+
+
+
+com ******************************       Layout              **********************************************
+OPEN Main_Table_Txn
+save layout FILE TO "%_layout%\Main_Table_Txn.layout"
+
+OPEN Main_Tabler_Inv
+save layout FILE TO "%_layout%\Main_Tabler_Inv.layout"
+com ******************************       Layout              **********************************************
+
+
+

@@ -1,0 +1,24 @@
+
+COMMENT
+********************************************************************
+**程式代號   ：
+**主要表格   ：
+**目的       ：
+**備註       ：
+********************************************************************
+**Step1      ：共用關聯欄位
+**Step2      ：建立關聯
+**Step3      ：
+**Step4      ：
+********************************************************************
+END
+
+DEFINE FIELD _實際卡號 COMPUTED 
+
+LAST(EXCLUDE(CardNo," "),10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 12
+SUBSTR(LAST(EXCLUDE(CardNo," "),11),1,10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 13
+SUBSTR(LAST(EXCLUDE(CardNo," "),11),1,10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 14
+SUBSTR(LAST(EXCLUDE(CardNo," "),11),1,10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 15
+SUBSTR(LAST(EXCLUDE(CardNo," "),11),1,10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 16
+SUBSTR(LAST(EXCLUDE(CardNo," "),11),1,10) IF LENGTH( ALLTRIM( EXCLUDE( ALLTRIM(STRING(VALUE( CardNo, 0),20)), ""))) = 18
+""
